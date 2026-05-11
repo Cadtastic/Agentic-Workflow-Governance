@@ -7,15 +7,6 @@
 **Scope:** Agency level L1 and above (see §2)
 **License:** CC BY-SA 4.0
 
-**Changes since v0.2:**
-- §3 — tier resolution expressed as a deterministic algorithm; borderline-resolution rule added; data-sensitivity flagged as open
-- §4 — phase model expanded with entry criteria, exit criteria, and common-gate placement per phase
-- §5.2 — composition patterns now follow the same uniform schema as primitives
-- §6 — handoff schemas restructured as a schema-as-contract specification with machine-validatable fields, tier-graded extensions, primitive mapping, and anti-patterns
-- **Appendix C added** — end-to-end worked example (agentic refund processing) walking the framework through a real workflow
-- §8 matrix wording sharpened to reference the v0.3 pattern definitions
-- Glossary extended
-
 ---
 
 ## 0. Why this exists
