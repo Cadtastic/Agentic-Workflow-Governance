@@ -8,6 +8,44 @@ The `Resolved (open design questions)` section is a project-specific extension t
 
 ---
 
+## [0.3.0] — 2026-05-11
+
+Drills handoff schemas, tier resolution, phase model, and composition patterns to uniform depth. Adds an end-to-end worked example (agentic refund processing). Restructures the handoff specification as a machine-validatable, schema-as-contract specification.
+
+### Added
+
+- **Appendix C — Worked Example: Agentic Refund Processing.** End-to-end walkthrough applying AWG to a realistic agentic workflow at RED tier. Covers all six application steps from §11, includes a full YAML handoff-schema instance, and contrasts the AWG-governed workflow against a typical pre-AWG version that fails P1–P4.
+- **§3.1 Resolution algorithm.** Tier resolution is now expressed deterministically: `tier = max(agency_signal, stakes_signal, reversibility_signal, blast_radius_signal)`. Each axis maps to a tier signal; the workflow tier is the maximum. Replaces v0.2's subjective tier mapping.
+- **§3.2 RED-trigger stacking.** Multiple RED triggers do not compound the tier (it is already maximal) but DO compound gate intensity. Specific stacking rules for External-blast-radius RED, Irreversibility RED, High-stakes RED, and L3-agency RED.
+- **§3.3 Borderline resolution.** Ambiguous axis values bias toward the higher tier. Explicit downgrade requires `design-attestation` review with documented rationale. Codifies "default is over-governed, not under-governed" as a P4 enforcement.
+- **§4 phase entry/exit criteria.** Each phase (Plan, Act, Verify, Release, Monitor) now has explicit entry conditions, expected activity, exit conditions, and common gate placement. Replaces v0.2's one-line phase descriptions.
+- **§4.2 phase optionality patterns.** Documents that not every workflow exercises every phase, with named patterns: read-only-inquiry (Plan only), idempotent-single-shot (Plan + Act), bulk-operations (all five), long-running-agents (continuous Monitor with nested Plan/Act).
+- **§4.3 "Phase boundaries are gates."** Makes the placement principle explicit: governance lives at phase transitions; within a phase, the agent operates with the authority granted by `design-attestation` and constrained by `scope-bound-execution`.
+- **§6.1 Schema-as-contract model.** Three-party contract framing — the agent (must produce schema-valid content or be blocked), the reviewer (has uniform shape to react to), the provenance log (receives the structured record).
+- **§6.2 Base schema with 13 machine-validatable required fields.** `workflow_id`, `action_id`, `agent_identity`, `process_owner`, `intent`, `proposed_action`, `diff`, `justification`, `evidence`, `uncertainty`, `reversibility`, `open_questions`, `provenance_ref`. Each field has explicit type and validation rules. Replaces v0.2's prose enumeration of six fields.
+- **§6.3 Tier-graded schema extensions.** YELLOW adds `alternatives_considered` (may be empty with sentinel) and `impact_assessment`. RED adds `compliance_trace`, `rehearsal_ref`, and `dual_attestation`, and requires `alternatives_considered` to have ≥1 item with rejection rationale.
+- **§6.4 Schema-to-primitive mapping.** Table specifying which primitive produces, validates, and consumes each schema field. Makes the cross-section coupling between §5 and §6 explicit.
+- **§6.5 Schema-specific anti-patterns.** Free-form prose handoffs, human-only validation, reviewer-judgment fields, partial schemas per tier, agent-set approval status, mutable schemas.
+- **§6.6 Worked YAML schema example.** Full YELLOW-tier handoff for an "orders cancel" action, demonstrating every required and conditional field populated with realistic content.
+- **§10 Q9.** New open design question: should v1.0 publish an official AWG Schema (e.g., JSON Schema artifact) for cross-adopter interoperability, or stay tool-neutral?
+- **Glossary entries (Appendix A).** *RED-trigger stacking*, *schema validator*.
+
+### Changed
+
+- **§5.2 Composition Patterns.** Each of the six patterns (circuit-breaker, dual-control, canary-deploy, rollback-rehearsed, time-bounded-contractor, multi-agent-supervisor) now follows the same uniform schema as primitives — composes / when-to-use / structural requirements / anti-pattern. Replaces v0.2's bullet-point sketches.
+- **§6 Handoff Schemas — fully restructured.** Reorganized from a prose description of required fields into a six-subsection schema-as-contract specification: design philosophy (§6.0), contract model (§6.1), base schema (§6.2), tier-graded extensions (§6.3), schema-to-primitive mapping (§6.4), anti-patterns (§6.5), worked example (§6.6). Schema validation is now framed as the *first* gate (machine-enforced) before human review.
+- **§3 worked examples.** Refreshed under the v0.3 resolution algorithm. Notable shift: the Slack-channel-archival example moved from GREEN (v0.2) to YELLOW (v0.3) because L2 agency now floors the signal at YELLOW. Documented in §3.4 as a deliberate consequence of "any bounded-autonomy AI in production should at minimum have provenance logging and a kill switch."
+- **§8 Matrix wording.** Cells now reference v0.3 composition patterns where appropriate (e.g., RED Monitor cell now reads "circuit-breaker pattern + `drift-monitor` + `time-to-live` (hours)" rather than enumerating constituent primitives). Reading the matrix requires §5 primitives, §5.2 patterns, and §6 schemas together. Adds a "minimum baseline" interpretation rule.
+
+### Position-strengthened (open questions with proposed v1.0 direction)
+
+- **§10 Q1** — *Data sensitivity as a fifth classification axis.* Proposed direction now stated: distinct fifth axis with regulated data → minimum YELLOW, special-category data (health, finance) → minimum RED. Not yet ratified.
+- **§10 Q3** — *Re-classification cadence.* Proposal: annual re-attestation for all YELLOW+, semi-annual for RED, in addition to `drift-monitor`-triggered reclassification.
+- **§10 Q4** — *Tooling neutrality.* Current bias documented: stay neutral; provide a reference YAML shape (§6.6) without mandating a specific validator implementation.
+- **§10 Q6** — *Multi-agent workflows.* v0.3 position articulated: single Process Owner of the workflow eats the loss; supervisor pattern (§5.2) is the structural shape; per-agent attribution lives in `provenance-log` for post-hoc analysis. Whether this is sufficient remains open.
+
+---
+
 ## [0.2.0] — 2026-05-11
 
 A structural rework of the gate primitive library. The taxonomy now sorts primitives along a three-axis space (lifecycle / authority / function) and distinguishes atomic primitives from composition patterns. The handoff schema and AWG matrix are updated to reflect the new primitive library.
@@ -90,5 +128,6 @@ Initial skeleton draft. Establishes the framework's structure, principles, scope
 - v0.1 self-identified the primitive list in §5 as the most likely structurally wrong component on first pass. The v0.2 rework confirmed and addressed this.
 - v0.1's §8 matrix referenced primitive *names* rather than coordinates with parameters. Sharpened in v0.2.
 
+[0.3.0]: https://github.com/Cadtastic/Agentic-Workflow-Governance/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Cadtastic/Agentic-Workflow-Governance/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Cadtastic/Agentic-Workflow-Governance/releases/tag/v0.1.0
