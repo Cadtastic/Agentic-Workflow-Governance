@@ -8,6 +8,36 @@ The `Resolved (open design questions)` section is a project-specific extension t
 
 ---
 
+## [0.4.0] — 2026-06-09
+
+Adds the Stop-Gate Decision Model — the framework's normative answer to *when and when not* to use human stop gates — and corrects/broadens the §0 evidence base. Driven by REVIEW-v0.3.md (strategic review against the June 2026 landscape, with adversarial source verification). Canonical spec renamed to `SPEC.md`; prior snapshots moved to `spec-history/`.
+
+### Added
+
+- **§5.4 Stop-Gate Decision Model.** Human gates now carry a justification burden:
+  - **§5.4.1 Placement test.** A `human-attestation` gate is justified only if all five conditions hold — G1 competence advantage, G2 epistemic access, G3 causal power, G4 attention budget, G5 leverage point — each with a named substitute control on failure. Recorded per-gate at `design-attestation`.
+  - **§5.4.2 Selective gating as default shape (YELLOW+).** The gate fires on uncertainty-threshold breach, irreversibility, scope-bound approach, or plan deviation — not per-action. Set-based/conformal uncertainty signals preferred over raw confidence scalars.
+  - **§5.4.3 Granularity parameter.** `human-attestation(n, sod, granularity: plan | action | batch)`. Plan-level attestation approves the plan at the Plan→Act boundary; the approved plan becomes a `scope-bound-execution` contract; deviation re-gates.
+  - **§5.4.4 Gate-health monitoring (required).** `drift-monitor` MUST track approval rate (sustained ≥ ~95–98% = presumptively dead gate → mandatory redesign with three sanctioned outcomes), review latency distribution, and (RED, recommended) seeded-error catch rate. "Leave it as is" is not a sanctioned outcome.
+  - **§5.4.5 Anti-patterns.** Dead gate kept for show; blame-record gate; uniform per-action gating "to be safe"; the unfalsifiable gate.
+- **§6.2 / §6.5 infrastructure-asserted evidence.** `evidence` and `diff` must be produced by systems the agent does not control; new anti-pattern *agent-narrated evidence*. Threat basis: goal hijacking (OWASP ASI01) and demonstrated approval-prompt misrepresentation attacks.
+- **Glossary entries (Appendix A).** *Dead gate*, *gate-health*, *placement test*, *selective gating*.
+- **CITATION.cff** with ORCID, enabling Zenodo DOI-per-release archiving and ORCID auto-update.
+
+### Changed
+
+- **§0 rewritten.** Wiles et al. (2026) now characterized precisely: full-sample average effects are small; the 16%/44% headline numbers are pre-registered subgroup effects among the ~23% of orgs that list AI agents on org charts; working-paper status and framing-experiment design stated. Evidence base broadened: Vaccaro, Almaatouq & Malone (2024) meta-analysis; Green & Chen (2019); Green (2022); production approval-rate data (93%). *Oversight theater* named as a co-equal failure mode alongside oversight erosion.
+- **§3.3 Borderline resolution.** Upward bias re-scoped: it applies to the *tier*, not to gate count. Human gates implied by a higher tier still route through the §5.4.1 placement test.
+- **§5.1 `human-attestation`.** Signature gains the `granularity` parameter; structural requirements now require a recorded placement-test justification and gate-health monitoring.
+- **§8 Matrix.** Human-attestation entries are minimums conditional on the placement test, with documented substitution on failure. YELLOW × Release changed from unconditional `human-attestation(n=1)` to selective, plan-or-batch granularity.
+- **Spec file layout.** `agentic-workflow-governance-v0.3-skeleton.md` → `SPEC.md` (canonical, reflects HEAD); v0.1/v0.2 snapshots → `spec-history/`. Header cleaned: license set to CC BY-SA 4.0; per-version change blocks now live only in this file.
+- **References (Appendix B).** Added Vaccaro et al. (2024), Green & Chen (2019), Green (2022), Sterz et al. (2024), Ren et al. (2023, KnowNo), Anthropic (2026), OWASP Top 10 for Agentic Applications.
+
+### Position-strengthened (open questions with proposed v1.0 direction)
+
+- **§10 #8 (calibration boundary)** — direction set: declaration stays required; conditioning gates on the signal at RED requires calibration evidence at `design-attestation`; set-based/conformal signals preferred (§5.4.2). Full resolution deferred to the v0.4 backlog tranche.
+- **§10 #9 (schema prescriptiveness)** — direction set by ecosystem convergence on JSON Schema 2020-12; official AWG schema artifact planned for v0.5 per REVIEW-v0.3.md roadmap.
+
 ## [0.3.0] — 2026-05-11
 
 Drills handoff schemas, tier resolution, phase model, and composition patterns to uniform depth. Adds an end-to-end worked example (agentic refund processing). Restructures the handoff specification as a machine-validatable, schema-as-contract specification.
@@ -98,7 +128,7 @@ A structural rework of the gate primitive library. The taxonomy now sorts primit
 
 ---
 
-## [0.1.0] — 2026-05-09
+## [0.1.0] — 2026-05-11
 
 Initial skeleton draft. Establishes the framework's structure, principles, scope, and component skeleton. Multiple sections marked explicitly as v0.1-quality and pending structural review.
 
@@ -128,6 +158,7 @@ Initial skeleton draft. Establishes the framework's structure, principles, scope
 - v0.1 self-identified the primitive list in §5 as the most likely structurally wrong component on first pass. The v0.2 rework confirmed and addressed this.
 - v0.1's §8 matrix referenced primitive *names* rather than coordinates with parameters. Sharpened in v0.2.
 
+[0.4.0]: https://github.com/Cadtastic/Agentic-Workflow-Governance/releases/tag/v0.4.0
 [0.3.0]: https://github.com/Cadtastic/Agentic-Workflow-Governance/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Cadtastic/Agentic-Workflow-Governance/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Cadtastic/Agentic-Workflow-Governance/releases/tag/v0.1.0
