@@ -10,7 +10,7 @@ The `Resolved (open design questions)` section is a project-specific extension t
 
 ## [0.4.0] — 2026-06-09
 
-Adds the Stop-Gate Decision Model — the framework's normative answer to *when and when not* to use human stop gates — and corrects/broadens the §0 evidence base. Driven by REVIEW-v0.3.md (strategic review against the June 2026 landscape, with adversarial source verification). Canonical spec renamed to `SPEC.md`; prior snapshots moved to `spec-history/`.
+Adds the Stop-Gate Decision Model — the framework's normative answer to *when and when not* to use human stop gates — and corrects/broadens the §0 evidence base. Driven by REVIEW-v0.3.md (strategic review against the June 2026 landscape, with adversarial source verification). Canonical spec renamed to `SPEC.md`; prior snapshots moved to `spec-history/`. Completes the v0.4 scope: data-sensitivity fifth axis, stable identifiers, governance-grade identity precondition, threat-model appendix, and strengthened multi-agent coverage.
 
 ### Added
 
@@ -23,6 +23,11 @@ Adds the Stop-Gate Decision Model — the framework's normative answer to *when 
 - **§6.2 / §6.5 infrastructure-asserted evidence.** `evidence` and `diff` must be produced by systems the agent does not control; new anti-pattern *agent-narrated evidence*. Threat basis: goal hijacking (OWASP ASI01) and demonstrated approval-prompt misrepresentation attacks.
 - **Glossary entries (Appendix A).** *Dead gate*, *gate-health*, *placement test*, *selective gating*.
 - **CITATION.cff** with ORCID, enabling Zenodo DOI-per-release archiving and ORCID auto-update.
+- **§3.5 Data sensitivity — fifth classification axis (ratified).** None-or-internal → GREEN; Regulated → ≥YELLOW; Special-category (PHI, credentials/secrets, biometric, children's data) → ≥RED. New `data_signal` in the §3.1 algorithm; new §3.2 stacking rule; §3.4 worked examples re-scored with a Data column (credential rotation now stacks two RED triggers).
+- **Stable identifiers.** Primitives `AWG-P01`–`AWG-P10`, composition patterns `AWG-C01`–`AWG-C06`. Permanent — never renumbered or reused — so external tooling, crosswalks, and audits can reference them across versions (§5.0).
+- **§5.0 Cross-cutting precondition: governance-grade agent identity.** Platform-issued, distinct per agent, lifecycle-managed, verifiable at every gate; shared service accounts declared non-governance-grade. A precondition of the primitive library, not an eleventh primitive.
+- **Appendix D — Threat Model & Trust Boundaries.** Platform-enforced preconditions; infrastructure-asserted vs. agent-asserted schema field classification; adversarial behaviors the structure addresses (goal hijacking, approval-prompt misrepresentation, provenance evasion, authority persistence); explicit out-of-scope list with pointers to OWASP ASI and MAESTRO.
+- **§2 L0 caveat.** Automation bias operates at L0 too; named as a model-risk concern, not an agentic-governance one.
 
 ### Changed
 
@@ -33,9 +38,14 @@ Adds the Stop-Gate Decision Model — the framework's normative answer to *when 
 - **Spec file layout.** `agentic-workflow-governance-v0.3-skeleton.md` → `SPEC.md` (canonical, reflects HEAD); v0.1/v0.2 snapshots → `spec-history/`. Header cleaned: license set to CC BY-SA 4.0; per-version change blocks now live only in this file.
 - **References (Appendix B).** Added Vaccaro et al. (2024), Green & Chen (2019), Green (2022), Sterz et al. (2024), Ren et al. (2023, KnowNo), Anthropic (2026), OWASP Top 10 for Agentic Applications.
 
+### Resolved (open design questions)
+
+- **§10 #1 (data sensitivity)** — resolved: ratified as a distinct fifth axis (§3.0, §3.5) rather than absorbed into Stakes; rationale: audit-regime crosswalks key on data category, and a distinct axis makes the data question unskippable.
+- **§10 #6 (multi-agent accountability)** — resolved: the workflow's single Process Owner is accountable; the supervisor pattern (AWG-C06) gains trace-context correlation, MAST failure-mode coverage, and an explicit limits note on steganographic collusion; per-agent attribution is forensic, not accountability-bearing.
+
 ### Position-strengthened (open questions with proposed v1.0 direction)
 
-- **§10 #8 (calibration boundary)** — direction set: declaration stays required; conditioning gates on the signal at RED requires calibration evidence at `design-attestation`; set-based/conformal signals preferred (§5.4.2). Full resolution deferred to the v0.4 backlog tranche.
+- **§10 #8 (calibration boundary)** — direction set: declaration stays required; conditioning gates on the signal at RED requires calibration evidence at `design-attestation`; set-based/conformal signals preferred (§5.4.2).
 - **§10 #9 (schema prescriptiveness)** — direction set by ecosystem convergence on JSON Schema 2020-12; official AWG schema artifact planned for v0.5 per REVIEW-v0.3.md roadmap.
 
 ## [0.3.0] — 2026-05-11

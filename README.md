@@ -29,7 +29,7 @@ write for themselves.
 | [`SPEC.md`](SPEC.md) | **The canonical specification.** Always reflects HEAD; start here. |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format, [SemVer](https://semver.org/spec/v2.0.0.html)). Each entry summarizes what changed and which open design questions moved. |
 | [`spec-history/`](spec-history/) | Frozen snapshots of early drafts (v0.1, v0.2), kept for convenient side-by-side reading. Full history is also in git: `git log --follow SPEC.md`. |
-| [`REVIEW-v0.3.md`](REVIEW-v0.3.md) | Strategic review of the framework against the June 2026 landscape — competing frameworks, the human-oversight evidence base, and the roadmap to v1.0. The rationale behind the v0.4 changes lives here. |
+| [`reviews/`](reviews/) | Strategic review records — the rationale and evidence behind each version's changes. [`REVIEW-v0.3.md`](reviews/REVIEW-v0.3.md) reviews the framework against the June 2026 landscape and sets the roadmap to v1.0. |
 | [`CITATION.cff`](CITATION.cff) | Citation metadata (drives GitHub's "Cite this repository" button and DOI archiving). |
 | [`LICENSE`](LICENSE) | CC BY-SA 4.0, full legal code. |
 
@@ -48,7 +48,7 @@ Pointers only — the content lives in the spec:
 
 Current state: **v0.4.0** — complete framework with the Stop-Gate Decision Model; not yet 1.0.
 
-Direction (detailed in [`REVIEW-v0.3.md`](REVIEW-v0.3.md)): v0.5 adds machine-readable
+Direction (detailed in [`reviews/REVIEW-v0.3.md`](reviews/REVIEW-v0.3.md)): v0.5 adds machine-readable
 artifacts — a JSON Schema (2020-12) for the handoff schemas, stable control IDs, crosswalks
 to NIST AI RMF / ISO/IEC 42001 / CSA AICM / OWASP ASI, and a reference validator. v1.0 adds
 a conformance checklist and settles the long-term governance home. Open design questions are
