@@ -2,7 +2,7 @@
 
 *A framework for designing, gating, and pinning accountability in workflows where AI agents take action.*
 
-**Version:** 0.4.0-draft
+**Version:** 0.4.0
 **Layer:** 1 of 2 (org-agnostic framework; operating models live in Layer 2)
 **Scope:** Agency level L1 and above (see §2)
 **License:** [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
@@ -17,7 +17,7 @@
 - [1. Principles](#1-principles)
 - [2. Scope: Agency Levels (L0–L3)](#2-scope-agency-levels-l0l3)
 - [3. Component 1 — Work Classification](#3-component-1--work-classification)
-  - [3.0 Axes](#30-axes) · [3.1 Resolution algorithm](#31-resolution-algorithm) · [3.2 RED-trigger stacking](#32-red-trigger-stacking) · [3.3 Borderline resolution](#33-borderline-resolution) · [3.4 Worked examples](#34-worked-examples) · [3.5 Data sensitivity — open](#35-data-sensitivity--open)
+  - [3.0 Axes](#30-axes) · [3.1 Resolution algorithm](#31-resolution-algorithm) · [3.2 RED-trigger stacking](#32-red-trigger-stacking) · [3.3 Borderline resolution](#33-borderline-resolution) · [3.4 Worked examples](#34-worked-examples) · [3.5 Data sensitivity](#35-data-sensitivity-fifth-axis--ratified-v04)
 - [4. Component 2 — Phase Model](#4-component-2--phase-model)
   - [4.0 Design philosophy](#40-design-philosophy) · [4.1 Phase definitions](#41-phase-definitions) · [4.2 Phase optionality](#42-phase-optionality) · [4.3 Phase boundaries are gates](#43-phase-boundaries-are-gates)
 - [5. Component 3 — Gate Primitives](#5-component-3--gate-primitives)
@@ -32,6 +32,7 @@
 - [Appendix A — Glossary](#appendix-a--glossary)
 - [Appendix B — References](#appendix-b--references)
 - [Appendix C — Worked Example: Agentic Refund Processing](#appendix-c--worked-example-agentic-refund-processing)
+- [Appendix D — Threat Model & Trust Boundaries](#appendix-d--threat-model--trust-boundaries)
 
 ---
 
@@ -70,18 +71,21 @@ Existing AI governance frameworks (NIST AI RMF, ISO/IEC 42001, EU AI Act complia
 | **L2** | Bounded autonomy — AI executes within explicit guardrails, no per-action review | An agent that auto-files invoices ≤$X under a written policy | Yes — full governance |
 | **L3** | Open autonomy — AI executes without per-action human review or fixed guardrails | A long-running agent that triages incidents, escalating only on uncertainty | Yes — maximum governance |
 
+AWG excludes L0 because suggest-only AI does not create the delegation dynamics this framework governs. One caveat: automation bias — humans over-adopting AI suggestions they should reject — operates at L0 too. It is a real risk, but a model-risk and decision-support concern (NIST AI RMF and the human-factors literature), not an agentic-governance one.
+
 ---
 
 ## 3. Component 1 — Work Classification
 
 ### 3.0 Axes
 
-Every workflow under AWG is scored along four signals:
+Every workflow under AWG is scored along five signals:
 
 - **Agency level** — L1 / L2 / L3 (from §2)
 - **Stakes** — Low / Medium / High — financial, reputational, safety, regulatory, or relational exposure if the action is wrong
 - **Reversibility** — Reversible / Reversible-with-effort / Irreversible
 - **Blast radius** — Single-user / Team / Org / External
+- **Data sensitivity** — None-or-internal / Regulated / Special-category (see §3.5 for category definitions)
 
 ### 3.1 Resolution algorithm
 
@@ -109,7 +113,13 @@ blast_radius_signal:
   Org                      → YELLOW
   External                 → RED
 
-tier = max(agency_signal, stakes_signal, reversibility_signal, blast_radius_signal)
+data_signal:
+  None-or-internal         → GREEN
+  Regulated                → YELLOW
+  Special-category         → RED
+
+tier = max(agency_signal, stakes_signal, reversibility_signal,
+           blast_radius_signal, data_signal)
 ```
 
 Any single axis scoring RED produces a RED tier. RED triggers do not compound the tier (it is already maximal), but they DO compound *gate intensity* — see §3.2.
@@ -122,6 +132,7 @@ Multiple RED triggers compound the handoff and gate requirements:
 - **Irreversibility RED** → expanded `reversibility` section; rehearsed rollback OR explicit `point_of_no_return` declaration required
 - **High stakes RED** → expanded `compliance_trace` in handoff; governance review required at design-attestation
 - **L3 agency RED** → `drift-monitor` required; `uncertainty-declaration` must condition downstream gates
+- **Special-category data RED** → expanded `compliance_trace` covering the applicable data regime; data-handling review at `design-attestation`; `provenance-log` retention and access controls aligned to that regime
 
 Workflows triggering multiple RED conditions assemble the union of these requirements.
 
@@ -135,19 +146,25 @@ Upward bias applies to the *tier*, not to gate count. A higher tier mandates str
 
 ### 3.4 Worked examples
 
-| Workflow | Agency | Stakes | Rev. | Blast | Signals | Tier |
-|---|---|---|---|---|---|---|
-| Agent labels Slack channels for archival | L2 | Low | Reversible | Team | Y, G, G, G | **YELLOW** |
-| Agent makes refund decisions ≤$100 | L2 | Medium | RWE | External | Y, Y, Y, **R** | **RED** |
-| Agent merges PRs to main outside business hours | L3 | High | RWE | Team | **R**, **R**, Y, G | **RED** |
-| Agent rotates production DB credentials | L2 | High | RWE | Org | Y, **R**, Y, Y | **RED** |
-| Agent drafts internal team standups | L2 | Low | Reversible | Team | Y, G, G, G | **YELLOW** |
+| Workflow | Agency | Stakes | Rev. | Blast | Data | Signals | Tier |
+|---|---|---|---|---|---|---|---|
+| Agent labels Slack channels for archival | L2 | Low | Reversible | Team | Internal | Y, G, G, G, G | **YELLOW** |
+| Agent makes refund decisions ≤$100 | L2 | Medium | RWE | External | Regulated | Y, Y, Y, **R**, Y | **RED** |
+| Agent merges PRs to main outside business hours | L3 | High | RWE | Team | Internal | **R**, **R**, Y, G, G | **RED** |
+| Agent rotates production DB credentials | L2 | High | RWE | Org | Special-cat. | Y, **R**, Y, Y, **R** | **RED** |
+| Agent drafts internal team standups | L2 | Low | Reversible | Team | Internal | Y, G, G, G, G | **YELLOW** |
 
-Note: the Slack-archival example moved from GREEN (v0.2) to YELLOW under the v0.3 algorithm because L2 agency floors the signal at YELLOW. This is a feature, not a bug — bounded-autonomy AI doing anything in production should at minimum have provenance logging and a kill switch.
+Note: the Slack-archival example moved from GREEN (v0.2) to YELLOW under the v0.3 algorithm because L2 agency floors the signal at YELLOW. This is a feature, not a bug — bounded-autonomy AI doing anything in production should at minimum have provenance logging and a kill switch. Under the v0.4 fifth axis, the credential-rotation example now stacks two RED triggers (High stakes + special-category data), compounding its gate requirements per §3.2.
 
-### 3.5 Data sensitivity — open
+### 3.5 Data sensitivity (fifth axis — ratified v0.4)
 
-Whether data sensitivity (PII, PHI, secrets, regulated) belongs as a fifth axis or remains absorbed into Stakes is flagged for v1.0 resolution (see §10 #1). Proposed v1.0 direction: add as a fifth axis with regulated data → minimum YELLOW, special-category data → minimum RED.
+Data sensitivity is a distinct classification axis (resolving §10 #1). Categories:
+
+- **None-or-internal** — no personal data; internal business data whose exposure is an inconvenience, not an incident. → GREEN
+- **Regulated** — personal data (PII), financial records, or other data subject to a named regulatory regime (GDPR, CCPA, SOX, PCI-DSS). → minimum YELLOW
+- **Special-category** — data whose compromise is severe and hard to remediate: health data (PHI), credentials and secrets, biometric data, children's data, special categories under GDPR Art. 9. → minimum RED
+
+Rationale for a distinct axis rather than absorption into Stakes: every adjacent audit regime (ISO/IEC 42001, CSA AICM, the EU AI Act) keys controls on data category. Absorbing data sensitivity into Stakes loses the field needed to crosswalk AWG classifications to those regimes, and lets "the data is sensitive but the stakes feel low" reasoning produce under-classification. The axis makes the data question unskippable.
 
 ---
 
@@ -222,13 +239,17 @@ Every primitive is characterized by a coordinate in a three-axis space:
 
 A primitive that does not fit cleanly in this space is either misnamed or actually composed of smaller primitives. The taxonomy is the framework's quality check on itself.
 
+Every primitive and composition pattern carries a **stable identifier** (`AWG-P01`…, `AWG-C01`…). Identifiers are permanent — never renumbered, never reused — so external documents, tooling, crosswalks, and audits can reference them across spec versions.
+
+**Cross-cutting precondition: governance-grade agent identity.** Every primitive assumes the acting agent has a platform-issued identity that is distinct per agent, lifecycle-managed (named owner, creation date, expiry), and verifiable at every gate. Shared service accounts are not governance-grade: they break `provenance-log` attribution, `scope-bound-execution` least-privilege, and `human-attestation` self-approval rejection simultaneously. Like the provenance substrate, identity is a precondition of the primitive library rather than an eleventh primitive. AWG does not prescribe an identity technology; it requires these properties of whichever the platform provides.
+
 ### 5.1 Primitive library
 
 Ten atomic primitives. Uniform schema: coordinates, description, structural requirements, composition partners, tier guidance, anti-pattern.
 
 ---
 
-#### `design-attestation`
+#### `design-attestation` — AWG-P01
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -246,7 +267,7 @@ A formal sign-off that the workflow's design — gate composition, scope bounds,
 
 ---
 
-#### `human-attestation(n, sod, granularity)`
+#### `human-attestation(n, sod, granularity)` — AWG-P02
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -264,7 +285,7 @@ A named human (or `n` humans, with separation of duties when `sod=true`) reviews
 
 ---
 
-#### `dry-run`
+#### `dry-run` — AWG-P03
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -282,7 +303,7 @@ The agent's proposed action executes against a non-production target with logged
 
 ---
 
-#### `uncertainty-declaration`
+#### `uncertainty-declaration` — AWG-P04
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -302,7 +323,7 @@ The agent must produce a calibrated uncertainty signal for each proposed action 
 
 ---
 
-#### `scope-bound-execution`
+#### `scope-bound-execution` — AWG-P05
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -320,7 +341,7 @@ The agent operates within explicit, machine-enforced bounds — rate limits, dol
 
 ---
 
-#### `provenance-log`
+#### `provenance-log` — AWG-P06
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -338,7 +359,7 @@ An immutable, append-only record of every agent action: input, reasoning trace, 
 
 ---
 
-#### `time-to-live`
+#### `time-to-live` — AWG-P07
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -356,7 +377,7 @@ The agent's authority to act expires automatically at a defined boundary — wal
 
 ---
 
-#### `policy-halt`
+#### `policy-halt` — AWG-P08
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -374,7 +395,7 @@ The agent is automatically halted when a named condition fires. Conditions are d
 
 ---
 
-#### `drift-monitor`
+#### `drift-monitor` — AWG-P09
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -392,7 +413,7 @@ Compares agent behavior — input distributions, output patterns, uncertainty ca
 
 ---
 
-#### `observable-period`
+#### `observable-period` — AWG-P10
 
 | Lifecycle | Authority | Function |
 |---|---|---|
@@ -416,7 +437,7 @@ Named controls adopters recognize are *compositions* of the primitives above. Ea
 
 ---
 
-#### Circuit-breaker
+#### Circuit-breaker — AWG-C01
 
 **Composes.** `provenance-log` (signal source) + `policy-halt` (halt action). Optionally + `drift-monitor` and/or `scope-bound-execution` as additional halt sources.
 
@@ -428,7 +449,7 @@ Named controls adopters recognize are *compositions* of the primitives above. Ea
 
 ---
 
-#### Dual control
+#### Dual control — AWG-C02
 
 **Composes.** `human-attestation(n=2, sod=true)`. Often + `design-attestation` clauses requiring documented approver independence.
 
@@ -440,7 +461,7 @@ Named controls adopters recognize are *compositions* of the primitives above. Ea
 
 ---
 
-#### Canary deploy
+#### Canary deploy — AWG-C03
 
 **Composes.** `dry-run` (staging validation) + `observable-period` (graduated rollout with automated regression checks) + `policy-halt` (auto-halt on regression).
 
@@ -452,7 +473,7 @@ Named controls adopters recognize are *compositions* of the primitives above. Ea
 
 ---
 
-#### Rollback-rehearsed
+#### Rollback-rehearsed — AWG-C04
 
 **Composes.** `design-attestation` carrying a rehearsal-log artifact ID + optionally `observable-period` whose rollback path *is* the rehearsed procedure.
 
@@ -464,7 +485,7 @@ Named controls adopters recognize are *compositions* of the primitives above. Ea
 
 ---
 
-#### Time-bounded contractor pattern
+#### Time-bounded contractor pattern — AWG-C05
 
 **Composes.** `time-to-live` (auto-expiry) + `human-attestation` (renewal gate) + `scope-bound-execution` (least-privilege during the period).
 
@@ -476,17 +497,21 @@ Named controls adopters recognize are *compositions* of the primitives above. Ea
 
 ---
 
-#### Multi-agent supervisor
+#### Multi-agent supervisor — AWG-C06
 
 **Composes.** Per-agent `provenance-log` + supervisor-level `policy-halt` + supervisor-level `human-attestation` for cross-agent decisions.
 
 **When to use.** Workflows where multiple agents act in concert; pipelines with intermediate agent handoffs.
 
-**Structural requirements.** Single Process Owner for the entire workflow (P1 holds at the workflow level, not per-agent); each agent identity distinct in provenance logs; cross-agent handoffs use the same handoff schema (§6) as agent→human handoffs.
+**Structural requirements.** Single Process Owner for the entire workflow (P1 holds at the workflow level, not per-agent); each agent identity distinct in provenance logs; cross-agent handoffs use the same handoff schema (§6) as agent→human handoffs; cross-agent actions carry propagated trace context end-to-end, so the workflow-level `provenance-log` reconstructs causality across agents rather than holding disconnected per-agent fragments.
+
+**Failure-mode coverage.** The empirical multi-agent failure taxonomy (MAST: 14 failure modes across three categories — roughly 42% specification issues, 37% inter-agent misalignment, 21% task verification) maps directly onto this pattern's gates: `design-attestation` carries the specification burden; schema-validated cross-agent handoffs target misalignment; Verify-phase invariant checks target verification. A supervisor that only monitors agent outputs covers none of the three.
+
+**Limits.** Content-level monitoring does not reliably detect steganographic inter-agent collusion. AWG's mitigation is structural, not forensic: minimal per-agent scope, supervisor-level `policy-halt`, and conservative tier classification for agent-to-agent pipelines — not transcript review.
 
 **Anti-pattern.** An "orchestrator agent" with implicit authority over other agents. The orchestrator is itself an agent and lives under the same primitives — it does not absorb accountability.
 
-**Open.** Accountability split when agent A produces input that agent B acts on — see §10 #6.
+**Resolved (v0.4).** Accountability when agent A produces input agent B acts on: the workflow's single Process Owner is accountable (§10 #6 resolved); per-agent attribution in `provenance-log` is forensic, not accountability-bearing.
 
 ---
 
@@ -772,7 +797,7 @@ Human-attestation entries in this matrix are minimums *conditional on the §5.4.
 
 - **Not a model risk framework.** Use NIST AI RMF for model evaluation, bias testing, lifecycle.
 - **Not a regulatory compliance framework.** Use ISO/IEC 42001 or jurisdiction-specific resources.
-- **Not a security review process.** Threat modeling, AppSec, supply-chain — separate concerns.
+- **Not a security review process.** Threat modeling, AppSec, supply-chain — separate concerns. AWG's own trust boundaries and adversarial assumptions are stated in Appendix D; full agentic threat enumeration lives in the OWASP agentic security suite and MAESTRO.
 - **Not a calibration framework.** `uncertainty-declaration` requires that uncertainty is declared; it does not validate the declared value is meaningful. Calibration lives in model risk.
 - **Not a checklist.** It is a structural toolkit — workflows compose primitives based on classification.
 - **Not for L0 systems.** Suggest-only AI does not produce the responsibility-shift mechanism AWG addresses.
@@ -784,12 +809,12 @@ Human-attestation entries in this matrix are minimums *conditional on the §5.4.
 
 Resolved or partially resolved in v0.3 marked accordingly.
 
-1. **Data sensitivity as a fifth classification axis** — or absorbed into Stakes? Proposed v1.0 direction: distinct fifth axis (regulated → ≥YELLOW; special-category → ≥RED). Not yet ratified.
+1. ~~**Data sensitivity as a fifth classification axis** — or absorbed into Stakes?~~ *Resolved v0.4: ratified as a distinct fifth axis (§3.0, §3.5) — regulated → ≥YELLOW; special-category → ≥RED.*
 2. **Interaction with existing change management** (ITIL CAB, SOX) — replace, supplement, or pass through? Likely pass-through (AWG `design-attestation` and CAB are both required; they don't substitute for each other), but worked example needed.
 3. **Re-classification cadence** — `drift-monitor` triggers reclassification on signal drift, but there's no time-based cadence for routine re-review. Proposal: annual re-attestation for all YELLOW+, semi-annual for RED.
 4. **Tooling neutrality** — does the framework prescribe formats for handoff schemas (JSON Schema? Protobuf?), or stay tool-agnostic? Current bias: stay neutral; provide a reference YAML shape (see §6.6) without mandating a specific validator.
 5. ~~**Circuit-breaker classification** — primitive or composed pattern?~~ *Resolved v0.2: composed pattern (§5.2).*
-6. **Multi-agent workflows** — accountability when agent A produces input agent B acts on. Current v0.3 position: single Process Owner of the workflow eats the loss; supervisor pattern (§5.2) is the structural shape; per-agent attribution lives in `provenance-log` for post-hoc analysis. Open whether this is enough.
+6. ~~**Multi-agent workflows** — accountability when agent A produces input agent B acts on.~~ *Resolved v0.4: the workflow's single Process Owner is accountable; supervisor pattern (AWG-C06) strengthened with trace-context correlation and MAST failure-mode coverage; per-agent attribution is forensic, not accountability-bearing.*
 7. ~~**The `q̂` problem.**~~ *Partially resolved v0.2: `uncertainty-declaration` + `drift-monitor` together carry the signal. Remaining sub-question:* should AWG enumerate canonical signals that should raise `q̂` (novel input distributions, recent incidents, time since last calibration), or leave signal selection to adopters?
 8. **Calibration boundary.** `uncertainty-declaration` requires the declaration but defers calibration to model risk. Sound delegation, or does `design-attestation` need to require calibration-evaluation evidence as a prerequisite?
 9. **Schema format prescriptiveness.** §6.6 shows a YAML shape but does not mandate it. Should v1.0 publish an official AWG Schema (JSON Schema artifact) for interoperability across adopters? Tradeoff: prescription drives ecosystem; flexibility drives adoption breadth.
@@ -839,6 +864,8 @@ The Layer 2 document covers *who* in your organization performs each step and ho
 - Sterz, S., et al. (2024). *On the Quest for Effectiveness in Human Oversight.* FAccT 2024.
 - Ren, A., et al. (2023). *Robots That Ask For Help: Uncertainty Alignment for Large Language Model Planners* (KnowNo). CoRL 2023.
 - Anthropic (2026). *How We Built Claude Code Auto Mode.* Engineering blog, March 2026.
+- Cemri, M., et al. (2025). *Why Do Multi-Agent LLM Systems Fail?* (MAST). arXiv:2503.13657.
+- W3C (2021). *Trace Context.* W3C Recommendation.
 - NIST AI Risk Management Framework (AI RMF 1.0).
 - ISO/IEC 42001:2023 — Artificial Intelligence Management System.
 - OWASP GenAI Security Project (2025). *Top 10 for Agentic Applications* (ASI01–ASI10).
@@ -971,4 +998,39 @@ AWG transforms each of these into a structural control rather than a procedural 
 
 ---
 
-*v0.4.0-draft. This revision adds the Stop-Gate Decision Model (§5.4) and corrects/broadens the evidence base (§0) per REVIEW-v0.3.md. Recommended review focus: the §5.4.1 placement test conditions, the §5.4.4 gate-health thresholds, and whether the worked example's gate composition should be re-derived through the placement test.*
+## Appendix D — Threat Model & Trust Boundaries
+
+AWG governs agents that are honest-but-fallible *and* must remain meaningful when the agent is adversarially influenced (goal hijacking via prompt injection is the top-ranked agentic risk — OWASP ASI01). This appendix states what AWG assumes, what it defends against, and where it defers. It is one page by design; full threat enumeration is out of scope (§9).
+
+### D.1 What AWG assumes the platform enforces
+
+These are preconditions, not things AWG primitives provide. If any fails, the gates built on it are decorative:
+
+- **Identity** — governance-grade agent identity per §5.0 (distinct, lifecycle-managed, verifiable at gates).
+- **Log integrity** — `provenance-log` substrate is append-only and outside the agent's write-control (AWG-P06 structural requirements).
+- **Gate wait** — execution paths structurally block on attestation (AWG-P02); the agent cannot proceed on timeout or self-approve.
+- **Bound enforcement below the agent** — `scope-bound-execution` (AWG-P05) lives in capability tokens, IAM, or middleware the agent's reasoning cannot override.
+
+### D.2 Trust classification of handoff schema fields (§6.2)
+
+| Class | Fields | Treatment |
+|---|---|---|
+| **Infrastructure-asserted** | `agent_identity`, `diff`, `evidence`, `provenance_ref`, approval/attestation records | Generated and signed by systems outside the agent's control; admissible as fact at gates |
+| **Agent-asserted** | `intent`, `justification`, `uncertainty`, `open_questions`, `alternatives_considered` | Claims, not facts. Useful for review context and post-hoc analysis; never the sole basis for gate passage; assumed corruptible under goal hijacking |
+
+The reviewer's protection at a gate comes from the infrastructure-asserted row. A workflow whose gate decisions hinge on agent-asserted fields alone has no adversarial floor.
+
+### D.3 Adversarial behaviors AWG's structure addresses
+
+- **Goal hijacking / prompt injection (ASI01)** — injected instructions cannot expand scope (AWG-P05 bounds are infrastructure-level) and cannot fabricate clean evidence (§6.2 infrastructure-assertion).
+- **Approval-prompt misrepresentation** — demonstrated attacks where the displayed action differs from the executed one; countered by gating on infrastructure-generated `diff`, never the agent's narration.
+- **Provenance evasion** — the agent cannot disable or selectively omit logging (AWG-P06); halts route to a named human (AWG-P08).
+- **Authority persistence** — a compromised agent's authority expires (`time-to-live`, AWG-P07) and renewal passes back through attestation.
+
+### D.4 Explicitly out of AWG's scope
+
+Model-layer jailbreak robustness, infrastructure compromise (an attacker who owns the platform owns the gates), supply-chain integrity of tools and MCP servers, and content-level detection of steganographic inter-agent collusion (see AWG-C06 *Limits*). For enumeration and mitigations: OWASP Agentic Security Initiative (ASI01–ASI10), OWASP *Agentic AI — Threats and Mitigations*, and CSA MAESTRO.
+
+---
+
+*v0.4.0. This revision adds the Stop-Gate Decision Model (§5.4), the data-sensitivity fifth axis (§3.5), stable identifiers (AWG-P/C), the governance-grade identity precondition (§5.0), the threat model (Appendix D), strengthened multi-agent coverage (AWG-C06), and a corrected, broadened evidence base (§0) — per REVIEW-v0.3.md. Recommended review focus: the §5.4.1 placement test conditions, the §5.4.4 gate-health thresholds, and whether Appendix C should be re-derived through the placement test.*
