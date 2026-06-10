@@ -2,23 +2,50 @@
 
 *A framework for designing, gating, and pinning accountability in workflows where AI agents take action.*
 
-**Version:** 0.3 — skeleton draft (handoff schemas, tier resolution, phase model, composition patterns drilled; worked example added)
+**Version:** 0.4.0-draft
 **Layer:** 1 of 2 (org-agnostic framework; operating models live in Layer 2)
 **Scope:** Agency level L1 and above (see §2)
-**License:** CC BY-SA 4.0
+**License:** [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+
+> **Canonical spec — reflects HEAD.** Version history lives in [CHANGELOG.md](CHANGELOG.md); prior spec snapshots live in [spec-history/](spec-history/).
+
+---
+
+## Contents
+
+- [0. Why this exists](#0-why-this-exists)
+- [1. Principles](#1-principles)
+- [2. Scope: Agency Levels (L0–L3)](#2-scope-agency-levels-l0l3)
+- [3. Component 1 — Work Classification](#3-component-1--work-classification)
+  - [3.0 Axes](#30-axes) · [3.1 Resolution algorithm](#31-resolution-algorithm) · [3.2 RED-trigger stacking](#32-red-trigger-stacking) · [3.3 Borderline resolution](#33-borderline-resolution) · [3.4 Worked examples](#34-worked-examples) · [3.5 Data sensitivity — open](#35-data-sensitivity--open)
+- [4. Component 2 — Phase Model](#4-component-2--phase-model)
+  - [4.0 Design philosophy](#40-design-philosophy) · [4.1 Phase definitions](#41-phase-definitions) · [4.2 Phase optionality](#42-phase-optionality) · [4.3 Phase boundaries are gates](#43-phase-boundaries-are-gates)
+- [5. Component 3 — Gate Primitives](#5-component-3--gate-primitives)
+  - [5.0 Design philosophy](#50-design-philosophy) · [5.1 Primitive library](#51-primitive-library) · [5.2 Composition patterns](#52-composition-patterns) · [5.3 Anti-patterns](#53-anti-patterns) · [5.4 The Stop-Gate Decision Model](#54-the-stop-gate-decision-model)
+- [6. Component 4 — Handoff Schemas](#6-component-4--handoff-schemas)
+  - [6.0 Design philosophy](#60-design-philosophy) · [6.1 Schema-as-contract](#61-schema-as-contract) · [6.2 Base schema](#62-base-schema-required-for-any-human-attestation-gate) · [6.3 Tier-graded extensions](#63-tier-graded-extensions) · [6.4 Schema-to-primitive mapping](#64-schema-to-primitive-mapping) · [6.5 Anti-patterns](#65-anti-patterns) · [6.6 Worked schema](#66-worked-schema-yaml-yellow-tier-example)
+- [7. Component 5 — Accountability Principle (the spine)](#7-component-5--accountability-principle-the-spine)
+- [8. The AWG Matrix (tier × phase × primitives)](#8-the-awg-matrix-tier--phase--primitives)
+- [9. What AWG Is Not](#9-what-awg-is-not)
+- [10. Open Design Questions](#10-open-design-questions)
+- [11. How to Apply (in 6 steps)](#11-how-to-apply-in-6-steps)
+- [Appendix A — Glossary](#appendix-a--glossary)
+- [Appendix B — References](#appendix-b--references)
+- [Appendix C — Worked Example: Agentic Refund Processing](#appendix-c--worked-example-agentic-refund-processing)
 
 ---
 
 ## 0. Why this exists
 
-Organizations are increasingly placing AI agents in roles that take action — not just produce text — inside core workflows. Empirical evidence (Wiles, Hsu, Bedard & Kropp, 2026, *Putting AI on the Org Chart*) shows that when AI is framed as an organizational actor with institutional credibility, two things happen simultaneously inside human reviewers:
+Organizations are increasingly placing AI agents in roles that take action — not just produce text — inside core workflows. Two failure modes follow, and they are not symmetric opposites of each other; both are empirically documented.
 
-1. The reviewer's perceived share of responsibility for errors drops (delegation shifts ownership).
-2. Unlike with human delegation, no compensating moral-hazard suspicion arises (AI doesn't shirk, so no instinct to monitor it more carefully).
+**Failure mode 1: oversight quietly erodes.** Wiles, Hsu, Bedard & Kropp (2026, *Putting AI on the Org Chart*, working paper) ran a pre-registered RCT with 1,261 HR and finance managers reviewing identical documents attributed to an AI tool, an "AI employee," or a human employee. Average treatment effects across the full sample were small — but among the ~23% of participants whose organizations already list AI agents on their org charts, the AI-employee framing produced ~16% worse review performance and 18% fewer errors caught, alongside a ~44% increase in (incentive-costly) escalation requests. Managers also assigned themselves ~9 percentage points less accountability. The proposed mechanism: delegation shifts perceived responsibility away from the reviewer (as with human delegation), but — because AI doesn't shirk — no compensating moral-hazard suspicion arises, so the monitoring reflex that disciplines human delegation never fires. Notably, escalation *rose while review quality fell*: more process, less protection, with escalation functioning partly as a record that the manager did not sign off alone.
 
-The combined effect is a measurable decline in oversight — in their RCT, ~16% lower review accuracy and a ~44% jump in escalation requests, despite identical underlying work. The mechanism is not anthropomorphism; it is a structural feature of how delegation interacts with the absence of moral hazard.
+Three caveats are owed: this is a working paper, not yet peer-reviewed; the headline effects are pre-registered subgroup effects, not full-sample averages; and it is a framing experiment on document review, not a field study of deployed agents. AWG cites it precisely because its subgroup finding indicts a specific, avoidable organizational choice — institutionalizing the AI as a peer — which is exactly what P1 and §7 prohibit.
 
-Existing AI governance frameworks (NIST AI RMF, ISO/IEC 42001, the EU AI Act compliance kits) address model risk, data handling, and high-level lifecycle management. None specifically addresses the *agentic governance gap* this paper identifies. AWG is designed to fill that gap.
+**Failure mode 2: oversight becomes theater.** The broader empirical record shows that *adding* human review is not automatically protective. A meta-analysis of 106 studies (Vaccaro, Almaatouq & Malone, *Nature Human Behaviour*, 2024) found human–AI combinations on average performed *worse* than the best of human or AI alone, with losses concentrated in decision tasks; synergy appears only where the human outperforms the AI on the gated judgment. Human reviewers of algorithmic risk predictions underperformed the algorithm alone and introduced demographic disparities (Green & Chen, 2019). In production agent tooling, approval prompts are approved ~93% of the time — described by the vendor itself as approval fatigue (Anthropic, 2026). And a survey of 41 government policies mandating human oversight of algorithms concluded that people could not perform the prescribed oversight, and that the mandate then *legitimized* the systems it failed to control (Green, 2022).
+
+Existing AI governance frameworks (NIST AI RMF, ISO/IEC 42001, EU AI Act compliance kits, the OWASP agentic security suite) address model risk, organizational management systems, threats, and runtime enforcement. None specifies *where in a workflow* human gates belong, how to derive gate placement from risk, how to keep gates alive once deployed, or how to pin accountability to a named human. AWG fills that gap — and, because of failure mode 2, it treats "add a human gate" as an engineering decision with a justification burden (§5.4), not as a default act of diligence.
 
 ---
 
@@ -103,6 +130,8 @@ Workflows triggering multiple RED conditions assemble the union of these require
 When an axis value is genuinely ambiguous (e.g., "is this Medium or High stakes?"), bias toward the higher tier. The default is over-governed, not under-governed. Explicit downgrade requires `design-attestation` review with documented rationale.
 
 This is a P4 enforcement: ambiguity left to operator judgment is cheap talk. Forced upward-bias with a documented downgrade path is structural.
+
+Upward bias applies to the *tier*, not to gate count. A higher tier mandates stronger structural controls per the matrix (§8); any *human* gates implied by the higher tier still route through the placement test (§5.4.1) at `design-attestation`. Over-gating is a named failure mode (§5.4.0), not a conservative default.
 
 ### 3.4 Worked examples
 
@@ -217,15 +246,15 @@ A formal sign-off that the workflow's design — gate composition, scope bounds,
 
 ---
 
-#### `human-attestation(n, sod)`
+#### `human-attestation(n, sod, granularity)`
 
 | Lifecycle | Authority | Function |
 |---|---|---|
 | pre-action | single or multi-human (parameterized by `n`) | attest |
 
-A named human (or `n` humans, with separation of duties when `sod=true`) reviews a specific run and approves before the agent's action commits. Bound to a run, not to the workflow design — that's `design-attestation`'s job.
+A named human (or `n` humans, with separation of duties when `sod=true`) reviews a specific run and approves before the agent's action commits. Bound to a run, not to the workflow design — that's `design-attestation`'s job. The `granularity` parameter (`plan | action | batch`, default `action`) controls what unit is attested — see §5.4.3.
 
-**Structural requirements.** A handoff schema (§6) producing the artifact under review; approver identity captured per-run in the provenance log; the agent's execution path CANNOT proceed without recorded approval (enforced in code, not policy); when `sod=true`, the proposer and approver(s) must be distinct identities and the platform must reject self-approval.
+**Structural requirements.** A handoff schema (§6) producing the artifact under review; approver identity captured per-run in the provenance log; the agent's execution path CANNOT proceed without recorded approval (enforced in code, not policy); when `sod=true`, the proposer and approver(s) must be distinct identities and the platform must reject self-approval. Placement requires a recorded §5.4.1 justification at `design-attestation`; deployed instances require §5.4.4 gate-health monitoring.
 
 **Composes with.** `dry-run` (output is part of artifact reviewed); `uncertainty-declaration` (high uncertainty can dynamically raise `n` or require `sod`); `provenance-log` (approval becomes part of the record).
 
@@ -475,6 +504,73 @@ Things that look like gates but fail P4 (cheap talk does not govern). Adopters r
 
 ---
 
+### 5.4 The Stop-Gate Decision Model
+
+#### 5.4.0 Design philosophy
+
+Every `human-attestation` gate consumes a scarce resource — reviewer attention — and manufactures an artifact: the appearance of oversight. A gate that no longer catches errors is therefore *worse* than no gate: it spends attention, produces false assurance, and creates a sign-off record that diffuses accountability without adding protection (the escalation dynamic in Wiles et al., 2026). Under-governance and oversight theater are both failure modes; AWG governs against both.
+
+Consequently: **tier bias is upward; gate bias is not.** §3.3's rule — ambiguous classification resolves to the higher tier — stands. But a higher tier buys more *structural* control (scope bounds, dry-runs, halts, monitoring, provenance depth), not automatically more human gates. Human gates are added only where they pass the placement test below.
+
+#### 5.4.1 The placement test
+
+A `human-attestation` gate is justified at a given point only if **all five** conditions hold:
+
+| ID | Condition | Test | On failure, substitute |
+|---|---|---|---|
+| **G1** | **Competence advantage** | The named reviewer class can plausibly catch material errors that the workflow's automated checks (`dry-run`, invariant checks, `scope-bound-execution`) do not — for *this* judgment type. Human+AI outperforms AI-alone only when this holds (Vaccaro et al., 2024). | `dry-run` + automated invariant checks; post-hoc sampling audit via `provenance-log` |
+| **G2** | **Epistemic access** | The handoff schema (§6) puts the specific content needed for that catch in front of the reviewer — not an undifferentiated context dump. | Fix the schema; if the needed content cannot be schematized, the gate cannot work — remove it |
+| **G3** | **Causal power** | Execution structurally waits on the attestation; the reviewer can block, modify, or escalate; self-approval is platform-rejected. | Not a gate (see §5.3 anti-patterns); re-implement or remove |
+| **G4** | **Attention budget** | Expected gate volume × honest per-item review time fits the named reviewers' capacity with slack. | Raise the gate threshold; gate selectively (§5.4.2); or convert to automated control + sampling audit |
+| **G5** | **Leverage point** | The gate sits at a phase boundary (§4.3) involving irreversibility, blast-radius expansion, or plan commitment — not uniformly per-action. | Move the gate to the boundary; govern intra-phase steps with `scope-bound-execution` and `policy-halt` |
+
+The test is applied at `design-attestation` and recorded: each human gate in the workflow design document carries a one-line justification per condition. A gate that cannot articulate its G1 — what the human catches that the machinery doesn't — is decoration.
+
+(G2, G3, and the spirit of G1 correspond to the effectiveness conditions of Sterz et al., FAccT 2024: epistemic access, causal power, self-control, fitting intentions.)
+
+#### 5.4.2 Selective gating is the default shape
+
+Uniform per-action gating fails G4 and G5 almost everywhere it is tried; the deferral literature (learning-to-defer; conformal methods such as KnowNo, Ren et al., 2023) shows selective review approaches full-review quality at a fraction of the attention cost. At YELLOW and above, the *default recommended shape* of `human-attestation` is conditional:
+
+```
+gate fires when ANY of:
+  - uncertainty-declaration exceeds the threshold policy
+  - the action is irreversible OR declares a point_of_no_return
+  - scope bounds are approached (parameterized margin)
+  - the action deviates from an attested plan (§5.4.3)
+otherwise: action proceeds under scope-bound-execution,
+           recorded in provenance-log, subject to sampling audit
+```
+
+Where the uncertainty signal conditions gating, set-based/conformal signals (gate when the model's prediction set is non-singleton) are preferred over raw confidence scalars, whose calibration under preference-tuning is unreliable (§5.1 `uncertainty-declaration`, scope boundary).
+
+#### 5.4.3 Granularity: plan-level attestation
+
+`human-attestation` carries a granularity parameter: `human-attestation(n, sod, granularity: plan | action | batch)`.
+
+**Plan-level** attestation approves the agent's complete proposed plan at the Plan→Act boundary; execution then proceeds ungated *within the approved plan's scope*, which becomes a machine-enforced contract via `scope-bound-execution`. Deviation from the attested plan — new resource, new operation type, exceeded magnitude — re-gates. This pattern (validated in production by plan-mode designs in agentic tooling) concentrates scarce review attention at the highest-leverage point (G5) and respects the attention budget (G4) on long action chains, where per-action review collapses into stamping.
+
+**Action-level** remains correct for sparse, high-stakes, irreversible single actions. **Batch-level** covers homogeneous bulk operations: the reviewer attests a sample plus the generating rule, not every row.
+
+#### 5.4.4 Gate-health monitoring
+
+Placement-time justification is insufficient — gates die in production. For every deployed `human-attestation` gate, `drift-monitor` MUST track:
+
+- **Approval rate.** Sustained approval ≥ ~95–98% is a presumptively dead gate. (Production anchor: 93% approval of agent permission prompts, reported by the vendor as approval fatigue.) Breach routes a redesign through `design-attestation` with three sanctioned outcomes: raise the firing threshold so the gate fires less and means more; convert to selective gating (§5.4.2); or convert to an automated control plus sampling audit. "Leave it as is" is not a sanctioned outcome.
+- **Review latency distribution.** Median time-to-approve below a floor calibrated to the schema's content volume indicates stamping, not review.
+- **Seeded-error catch rate** (RED tier, recommended). Periodically inject known-bad handoffs — flagged in `provenance-log`, structurally non-executable — and measure the reviewer catch rate. This operationalizes the planted-error methodology of the oversight literature as a running control, analogous to phishing simulation, and makes oversight effectiveness *measurable* rather than asserted.
+
+Gate-health signals are governance telemetry: they belong to the Process Owner and the governance function, not to the agent.
+
+#### 5.4.5 Anti-patterns
+
+- **The dead gate kept for show.** Approval rate has been ≥98% for two quarters; everyone knows it's a formality; it stays because removing it "looks bad." It spends attention and manufactures false assurance — remove or redesign it (§5.4.4).
+- **The blame-record gate.** A gate added not to catch errors but so that, when something goes wrong, there is a sign-off trail showing no one decided alone. This is accountability diffusion implemented as process (P1 violation in gate form).
+- **Uniform per-action gating "to be safe."** Fails G4/G5 by construction on any non-trivial volume; converges on stamping; crowds out the attention needed at the gates that matter.
+- **The unfalsifiable gate.** No G1 statement of what the human is expected to catch; therefore no way to measure whether the gate works; therefore cheap talk (P4).
+
+---
+
 ## 6. Component 4 — Handoff Schemas
 
 ### 6.0 Design philosophy
@@ -520,6 +616,7 @@ Field semantics worth calling out:
 - **`evidence` must include at least one passed item.** If no evidence passed, the agent should not be proposing the action.
 - **`open_questions` empty list requires explicit sentinel.** Agents may attest "no open questions" but must do so explicitly. The field cannot be omitted.
 - **`uncertainty.threshold_policy_outcome`** is the result of applying the `uncertainty-declaration` threshold policy: typically `below_threshold_no_escalation` / `above_threshold_escalate` / `above_hard_limit_halt`. This conditions downstream gate intensity.
+- **`evidence` and `diff` must be infrastructure-asserted.** Both fields are produced by systems the agent does not control: the dry-run harness writes its own artifact; the diff derives from execution-environment snapshots, not the agent's narration of them. Agent-narrated evidence is rejected at validation. (Threat basis: goal hijacking — OWASP ASI01 — and demonstrated attacks in which the approval prompt itself misrepresented the pending action. A reviewer reading attacker-influenced evidence is not a gate.)
 
 ### 6.3 Tier-graded extensions
 
@@ -564,6 +661,7 @@ Which primitives produce, validate, or consume schema content:
 - **Partial schemas per tier.** Use a single schema with optional/required fields graduated by tier. Reduces drift, simplifies validators.
 - **Agent-set approval status.** Approval status is set by the attestation system, never by the agent. An agent marking its own work approved is by definition ungoverned.
 - **Mutable schemas.** Schema fields, once submitted, are immutable. Corrections require a new schema instance and typically a new attestation cycle.
+- **Agent-narrated evidence.** The agent reports "dry run passed" as a string it authored. Evidence is admissible only when generated and signed by infrastructure outside the agent's control (§6.2).
 
 ### 6.6 Worked schema (YAML, YELLOW-tier example)
 
@@ -661,10 +759,12 @@ Each cell specifies the primitives (and parameters) required at that tier × pha
 | Tier | Plan | Act | Verify | Release | Monitor |
 |------|------|------|------|------|------|
 | **GREEN** | `design-attestation(n=1)` | `scope-bound-execution` (rate-limit) | spot-check via `provenance-log` | — | `provenance-log` |
-| **YELLOW** | `design-attestation(n=1)` + governance sampling audit | `dry-run` + `scope-bound-execution` + `uncertainty-declaration` | `human-attestation(n=1)` triggered when uncertainty > threshold | `human-attestation(n=1)` | `provenance-log` + `policy-halt` + `time-to-live` (days) |
+| **YELLOW** | `design-attestation(n=1)` + governance sampling audit | `dry-run` + `scope-bound-execution` + `uncertainty-declaration` | `human-attestation(n=1)` triggered when uncertainty > threshold | `human-attestation(n=1, granularity: plan or batch)`, selective per §5.4.2 | `provenance-log` + `policy-halt` + `time-to-live` (days) |
 | **RED** | `design-attestation(n=2, sod=true)` + governance review + rollback-rehearsed pattern | `dry-run` + `scope-bound-execution` (least-privilege) + `uncertainty-declaration` + `human-attestation(n=2, sod=true)` | `human-attestation(n=2, sod=true)` | canary-deploy pattern (`observable-period` + `human-attestation(n=1)`) | circuit-breaker pattern + `drift-monitor` + `time-to-live` (hours) |
 
 Each cell is a *minimum* — workflows may add primitives above the tier baseline based on workflow-specific risks. Subtraction below the baseline requires documented exception attested through `design-attestation` and routed to governance review.
+
+Human-attestation entries in this matrix are minimums *conditional on the §5.4.1 placement test*. Where a cell's human gate fails the test for a given workflow, the substitution column of §5.4.1 applies and the substitution is documented in `design-attestation`.
 
 ---
 
@@ -715,13 +815,17 @@ The Layer 2 document covers *who* in your organization performs each step and ho
 - **Atomic primitive** — a gate building block characterized by a single coordinate in the three-axis space. Cannot be meaningfully decomposed within AWG.
 - **Composition pattern** — a named control composed of multiple primitives. Recognized in §5.2; not part of the primitive library.
 - **Coordinate** — a primitive's position in the three-axis space (lifecycle / authority / function).
+- **Dead gate** — a deployed `human-attestation` gate whose sustained approval rate (≥ ~95–98%) shows it no longer discriminates; presumptively negative-value (§5.4.4).
 - **Gate** — a structural checkpoint between phases that conditionally permits transition.
+- **Gate-health** — the required telemetry on deployed human gates: approval rate, review latency distribution, and (RED) seeded-error catch rate (§5.4.4).
 - **Governance function** — the body that maintains AWG in an organization. Form varies by scale (Layer 2).
 - **Handoff** — the artifact passed at a gate; required content defined by the handoff schema.
+- **Placement test** — the five-condition justification (G1–G5: competence advantage, epistemic access, causal power, attention budget, leverage point) required before any `human-attestation` gate is added (§5.4.1).
 - **Process Owner** — the named human accountable for an AWG-governed workflow.
 - **Provenance** — the durable, integrity-protected record of an agent's actions; substrate for accountability.
 - **RED-trigger stacking** — additive requirements when multiple axes contribute a RED signal (§3.2).
 - **Schema validator** — the machine-enforced gate that rejects malformed handoffs before they reach human review.
+- **Selective gating** — the default YELLOW+ shape of `human-attestation`: the gate fires on uncertainty-threshold breach, irreversibility, scope-bound approach, or plan deviation, rather than on every action (§5.4.2).
 - **Tier** — the GREEN / YELLOW / RED output of work classification; drives gate intensity.
 
 ---
@@ -729,8 +833,15 @@ The Layer 2 document covers *who* in your organization performs each step and ho
 ## Appendix B — References
 
 - Wiles, E., Hsu, M., Bedard, J., & Kropp, M. (2026). *Putting AI on the Org Chart: Evidence on Delegation and Oversight.* Boston University / BCG working paper.
+- Vaccaro, M., Almaatouq, A., & Malone, T. (2024). *When Combinations of Humans and AI Are Useful.* Nature Human Behaviour, 8.
+- Green, B., & Chen, Y. (2019). *Disparate Interactions: An Algorithm-in-the-Loop Analysis of Fairness in Risk Assessments.* FAT* 2019.
+- Green, B. (2022). *The Flaws of Policies Requiring Human Oversight of Government Algorithms.* Computer Law & Security Review, 45.
+- Sterz, S., et al. (2024). *On the Quest for Effectiveness in Human Oversight.* FAccT 2024.
+- Ren, A., et al. (2023). *Robots That Ask For Help: Uncertainty Alignment for Large Language Model Planners* (KnowNo). CoRL 2023.
+- Anthropic (2026). *How We Built Claude Code Auto Mode.* Engineering blog, March 2026.
 - NIST AI Risk Management Framework (AI RMF 1.0).
 - ISO/IEC 42001:2023 — Artificial Intelligence Management System.
+- OWASP GenAI Security Project (2025). *Top 10 for Agentic Applications* (ASI01–ASI10).
 - Aghion, P., & Tirole, J. (1997). *Formal and Real Authority in Organizations.* Journal of Political Economy.
 - Holmström, B. (1979). *Moral Hazard and Observability.* Bell Journal of Economics.
 
@@ -859,3 +970,5 @@ Failures of that version against P1–P4:
 AWG transforms each of these into a structural control rather than a procedural expectation. That transformation is the framework's payoff.
 
 ---
+
+*v0.4.0-draft. This revision adds the Stop-Gate Decision Model (§5.4) and corrects/broadens the evidence base (§0) per REVIEW-v0.3.md. Recommended review focus: the §5.4.1 placement test conditions, the §5.4.4 gate-health thresholds, and whether the worked example's gate composition should be re-derived through the placement test.*

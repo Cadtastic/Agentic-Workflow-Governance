@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use or adapt this framework, please cite it as below."
+title: "Agentic Workflow Governance (AWG)"
+abstract: "A framework for designing, gating, and pinning accountability in workflows where AI agents take action: risk-tier classification, a phase model, atomic gate primitives, machine-validatable handoff schemas, and a named-human accountability principle."
+type: software
+authors:
+  - family-names: "Boord"
+    given-names: "Addam"
+    orcid: "https://orcid.org/0009-0001-0873-6325"
+repository-code: "https://github.com/Cadtastic/Agentic-Workflow-Governance"
+license: CC-BY-SA-4.0
+version: "0.4.0"
+date-released: "2026-06-09"
+keywords:
+  - AI agents
+  - agentic workflows
+  - AI governance
+  - human oversight
+  - accountability
+  - human-in-the-loop
